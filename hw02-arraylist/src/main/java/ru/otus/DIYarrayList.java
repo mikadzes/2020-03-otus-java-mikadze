@@ -1,12 +1,12 @@
 package ru.otus;
 
 import java.util.*;
+import java.util.function.Consumer;
 
-public class DIYarrayList<T> implements List<T> {
+public class DIYarrayList<E> implements List<E> {
 
     private int size;
     Object[] elementData;
-
 
     public DIYarrayList() {
         this.elementData = new Object[]{};
@@ -19,7 +19,7 @@ public class DIYarrayList<T> implements List<T> {
 
     @Override
     public boolean isEmpty() {
-        return size == 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -28,13 +28,13 @@ public class DIYarrayList<T> implements List<T> {
     }
 
     @Override
-    public Iterator<T> iterator() {
-        throw new UnsupportedOperationException();
+    public Iterator<E> iterator() {
+        return new Itr();
     }
 
     @Override
     public Object[] toArray() {
-        throw new UnsupportedOperationException();
+        return Arrays.copyOf(elementData, size);
     }
 
     @Override
@@ -43,9 +43,11 @@ public class DIYarrayList<T> implements List<T> {
     }
 
     @Override
-    public boolean add(T t) {
-        elementData[size] = t;
-        size++;
+    public boolean add(E e) {
+        if (size == elementData.length)
+            size++;
+        elementData = Arrays.copyOf(elementData, size);
+        elementData[size - 1] = e;
         return true;
     }
 
@@ -60,12 +62,12 @@ public class DIYarrayList<T> implements List<T> {
     }
 
     @Override
-    public boolean addAll(Collection<? extends T> c) {
+    public boolean addAll(Collection<? extends E> c) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean addAll(int index, Collection<? extends T> c) {
+    public boolean addAll(int index, Collection<? extends E> c) {
         throw new UnsupportedOperationException();
     }
 
@@ -86,26 +88,29 @@ public class DIYarrayList<T> implements List<T> {
     }
 
     @Override
-    public T get(int index) {
-        throw new UnsupportedOperationException();
+    public E get(int index) {
+        return (E) elementData[index];
     }
 
     @Override
-    public T set(int index, T element) {
-        throw new UnsupportedOperationException();
+    public E set(int index, E element) {
+        if (index < elementData.length) {
+            elementData[index] = element;
+        }
+        return element;
     }
 
     @Override
-    public void add(int index, T element) {
+    public void add(int index, E element) {
         if (size == index) {
             add(element);
         } else {
-
+            throw new IllegalArgumentException();
         }
     }
 
     @Override
-    public T remove(int index) {
+    public E remove(int index) {
         throw new UnsupportedOperationException();
     }
 
@@ -120,18 +125,78 @@ public class DIYarrayList<T> implements List<T> {
     }
 
     @Override
-    public ListIterator<T> listIterator() {
+    public ListIterator<E> listIterator() {
+        return new ListItr(0);
+    }
+
+    @Override
+    public ListIterator<E> listIterator(int index) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public ListIterator<T> listIterator(int index) {
+    public List<E> subList(int fromIndex, int toIndex) {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public List<T> subList(int fromIndex, int toIndex) {
-        throw new UnsupportedOperationException();
+
+    private class Itr implements Iterator<E> {
+        int cursor;
+        int lastRet = -1;
+
+        @Override
+        public boolean hasNext() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public E next() {
+            int i = cursor;
+            if (i >= size)
+                throw new NoSuchElementException();
+            Object[] elementData = DIYarrayList.this.elementData;
+            cursor = i + 1;
+            return (E) elementData[lastRet = i];
+        }
     }
 
+    private class ListItr extends Itr implements ListIterator<E> {
+        public ListItr(int i) {
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public E previous() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int nextIndex() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int previousIndex() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void set(E e) {
+            DIYarrayList.this.set(lastRet, e);
+        }
+
+        @Override
+        public void add(E e) {
+            throw new UnsupportedOperationException();
+        }
+    }
 }
