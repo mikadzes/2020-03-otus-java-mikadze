@@ -49,8 +49,8 @@ public class DIYarrayList<E> implements List<E> {
         if (size == elementData.length) {
             elementData = Arrays.copyOf(elementData, elementData.length * 2);
         }
+        elementData[size] = e;
         size++;
-        elementData[size - 1] = e;
         return true;
     }
 
