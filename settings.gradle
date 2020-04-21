@@ -9,3 +9,4 @@
 
 rootProject.name = 'otusMikadze'
 include 'hw01-gradle'
+include 'hw06-reflection'
