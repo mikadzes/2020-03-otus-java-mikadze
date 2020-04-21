@@ -1,7 +1,6 @@
 package ru.otus;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 public class DIYarrayList<E> implements List<E> {
 
@@ -44,9 +43,13 @@ public class DIYarrayList<E> implements List<E> {
 
     @Override
     public boolean add(E e) {
-        if (size == elementData.length)
-            size++;
-        elementData = Arrays.copyOf(elementData, size);
+        if (size == 0) {
+            elementData = new Object[10];
+        }
+        if (size == elementData.length) {
+            elementData = Arrays.copyOf(elementData, elementData.length * 2);
+        }
+        size++;
         elementData[size - 1] = e;
         return true;
     }
