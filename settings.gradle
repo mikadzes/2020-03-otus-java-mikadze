@@ -10,4 +10,4 @@
 rootProject.name = 'otusMikadze'
 include 'hw01-gradle'
 include 'hw02-arraylist'
-
+include 'hw06-reflection'
