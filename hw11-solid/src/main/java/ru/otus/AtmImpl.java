@@ -66,8 +66,38 @@ public class AtmImpl implements Atm {
         Integer count = calculateBanknoteCount(amount, banknote);
         if (count != null && count != 0) {
             tray.put(banknote, count);
+            setBanknoteCount(banknote, count);
         }
         return calculateAmount(amount, banknote, count);
+    }
+
+    private void setBanknoteCount(Banknotes banknote, Integer count) {
+        switch (banknote) {
+            case B10:
+                this.count_10 -= count;
+                break;
+            case B50:
+                this.count_50 -= count;
+                break;
+            case B100:
+                this.count_100 -= count;
+                break;
+            case B200:
+                this.count_200 -= count;
+                break;
+            case B500:
+                this.count_500 -= count;
+                break;
+            case B1000:
+                this.count_1000 -= count;
+                break;
+            case B2000:
+                this.count_2000 -= count;
+                break;
+            case B5000:
+                this.count_5000 -= count;
+                break;
+        }
     }
 
     private Integer calculateAmount(Integer amount, Banknotes banknote, Integer count) {

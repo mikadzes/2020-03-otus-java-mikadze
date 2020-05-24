@@ -55,8 +55,11 @@ class AtmTest {
     @Test
     void cashWithdrawal2() {
         assertEquals(Map.of(B5000, 1), atm.cashWithdrawal(5000));
+        assertEquals(83600,atm.getBalance());
         assertEquals(Map.of(B10, 1), atm.cashWithdrawal(10));
-        assertEquals(Map.of(B2000, 1, B1000, 1), atm.cashWithdrawal(3000));
+        assertEquals(83590,atm.getBalance());
         assertEquals(Map.of(B2000, 1, B1000, 1, B10, 2), atm.cashWithdrawal(3020));
+        assertEquals(80570,atm.getBalance());
+
     }
 }
