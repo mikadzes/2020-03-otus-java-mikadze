@@ -7,16 +7,27 @@ import static ru.otus.Banknotes.*;
 
 public class AtmImpl implements Atm {
 
-    private Integer count_10 = 0;
-    private Integer count_50 = 0;
-    private Integer count_100 = 0;
-    private Integer count_200 = 0;
-    private Integer count_500 = 0;
-    private Integer count_1000 = 0;
-    private Integer count_2000 = 0;
-    private Integer count_5000 = 0;
+    private int count_10;
+    private int count_50;
+    private int count_100;
+    private int count_200;
+    private int count_500;
+    private int count_1000;
+    private int count_2000;
+    private int count_5000;
 
     private Map<Banknotes, Integer> tray = new HashMap<>();
+
+    public AtmImpl(Map<Banknotes, Integer> cash) {
+        this.count_10 = cash.get(B10);
+        this.count_50 = cash.get(B50);
+        this.count_100 = cash.get(B100);
+        this.count_200 = cash.get(B200);
+        this.count_500 = cash.get(B500);
+        this.count_1000 = cash.get(B1000);
+        this.count_2000 = cash.get(B2000);
+        this.count_5000 = cash.get(B5000);
+    }
 
     public Integer getBalance() {
         return B10.getValue() * count_10

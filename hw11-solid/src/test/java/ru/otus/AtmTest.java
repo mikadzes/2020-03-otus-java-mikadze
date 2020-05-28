@@ -16,7 +16,6 @@ class AtmTest {
 
     @BeforeEach
     void setUp() {
-        atm = new AtmImpl();
         cash = Map.of(
                 B5000, 10,
                 B2000, 10,
@@ -27,7 +26,7 @@ class AtmTest {
                 B50, 10,
                 B10, 10
         );
-        atm.cashReplenishment(cash);
+        atm = new AtmImpl(cash);
     }
 
     @AfterEach
