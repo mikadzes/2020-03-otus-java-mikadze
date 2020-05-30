@@ -8,5 +8,5 @@ public interface Atm {
 
     void cashReplenishment(Map<Banknotes, Integer> cash);
 
-    Map<Banknotes, Integer> cashWithdrawal(Integer amount);
+    Map<Banknotes, Integer> cashWithdrawal(int amount);
 }

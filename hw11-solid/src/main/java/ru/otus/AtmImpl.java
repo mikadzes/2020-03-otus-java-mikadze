@@ -1,144 +1,65 @@
 package ru.otus;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static ru.otus.Banknotes.*;
+import static ru.otus.Banknotes.B10;
 
 public class AtmImpl implements Atm {
 
-    private int count_10;
-    private int count_50;
-    private int count_100;
-    private int count_200;
-    private int count_500;
-    private int count_1000;
-    private int count_2000;
-    private int count_5000;
-
-    private Map<Banknotes, Integer> tray = new HashMap<>();
+    private Map<Banknotes, Integer> state;
 
     public AtmImpl(Map<Banknotes, Integer> cash) {
-        this.count_10 = cash.get(B10);
-        this.count_50 = cash.get(B50);
-        this.count_100 = cash.get(B100);
-        this.count_200 = cash.get(B200);
-        this.count_500 = cash.get(B500);
-        this.count_1000 = cash.get(B1000);
-        this.count_2000 = cash.get(B2000);
-        this.count_5000 = cash.get(B5000);
+        this.state = cash;
     }
 
     public Integer getBalance() {
-        return B10.getValue() * count_10
-                + B50.getValue() * count_50
-                + B100.getValue() * count_100
-                + B200.getValue() * count_200
-                + B500.getValue() * count_500
-                + B1000.getValue() * count_1000
-                + B2000.getValue() * count_2000
-                + B5000.getValue() * count_5000;
+        return state.entrySet().stream()
+                .mapToInt(entry -> entry.getKey().getValue() * entry.getValue())
+                .sum();
     }
 
     public void cashReplenishment(Map<Banknotes, Integer> cash) {
-        count_10 += cash.get(B10);
-        count_50 += cash.get(B50);
-        count_100 += cash.get(B100);
-        count_200 += cash.get(B200);
-        count_500 += cash.get(B500);
-        count_1000 += cash.get(B1000);
-        count_2000 += cash.get(B2000);
-        count_5000 += cash.get(B5000);
+        this.state = Stream.concat(state.entrySet().stream(), cash.entrySet().stream())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        Integer::sum));
     }
 
-    public Map<Banknotes, Integer> cashWithdrawal(Integer amount) throws IllegalArgumentException, IllegalStateException {
+    public Map<Banknotes, Integer> cashWithdrawal(int amount) throws IllegalArgumentException, IllegalStateException {
         if (amount > getBalance()) {
             throw new IllegalStateException("В банкомате недостаточно средств");
         }
         if (amount % B10.getValue() > 0) {
             throw new IllegalArgumentException("Введите сумму кратную 10");
         }
-        tray.clear();
-        amount = addToTray(amount, B5000);
-        amount = addToTray(amount, B2000);
-        amount = addToTray(amount, B1000);
-        amount = addToTray(amount, B500);
-        amount = addToTray(amount, B200);
-        amount = addToTray(amount, B100);
-        amount = addToTray(amount, B50);
-        amount = addToTray(amount, B10);
-        if (amount != 0) {
-            throw new IllegalArgumentException("Внутренняя ошибка банкомата");
-        }
+        final int[] v = new int[1];
+        v[0] = amount;
+        Map<Banknotes, Integer>
+                tray = state.entrySet().stream()
+                .sorted(Map.Entry.<Banknotes, Integer>comparingByKey())
+                .map(entry -> {
+                    int count = getBanknotesCount(v[0], entry);
+                    v[0] -= entry.getKey().getValue() * count;
+                    return Map.entry(entry.getKey(), count);
+                })
+                .filter(entry -> entry.getValue() != 0)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue));
+
+        this.state = Stream.concat(state.entrySet().stream(), tray.entrySet().stream())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (v1, v2) -> v1 - v2));
         return tray;
     }
 
-    private Integer addToTray(Integer amount, Banknotes banknote) {
-        Integer count = calculateBanknoteCount(amount, banknote);
-        if (count != null && count != 0) {
-            tray.put(banknote, count);
-            setBanknoteCount(banknote, count);
-        }
-        return calculateAmount(amount, banknote, count);
+    private int getBanknotesCount(int amount, Map.Entry<Banknotes, Integer> entry) {
+        int neededCount = amount / entry.getKey().getValue();
+        return entry.getValue() >= neededCount ? neededCount : entry.getValue();
     }
-
-    private void setBanknoteCount(Banknotes banknote, Integer count) {
-        switch (banknote) {
-            case B10:
-                this.count_10 -= count;
-                break;
-            case B50:
-                this.count_50 -= count;
-                break;
-            case B100:
-                this.count_100 -= count;
-                break;
-            case B200:
-                this.count_200 -= count;
-                break;
-            case B500:
-                this.count_500 -= count;
-                break;
-            case B1000:
-                this.count_1000 -= count;
-                break;
-            case B2000:
-                this.count_2000 -= count;
-                break;
-            case B5000:
-                this.count_5000 -= count;
-                break;
-        }
-    }
-
-    private Integer calculateAmount(Integer amount, Banknotes banknote, Integer count) {
-        if (count != null) {
-            return amount - banknote.getValue() * count;
-        }
-        return amount;
-    }
-
-    private Integer calculateBanknoteCount(Integer amount, Banknotes banknote) {
-        int neededCount = amount / banknote.getValue();
-        switch (banknote) {
-            case B10:
-                return count_10 < neededCount ? count_10 : neededCount;
-            case B50:
-                return count_50 < neededCount ? count_50 : neededCount;
-            case B100:
-                return count_100 < neededCount ? count_100 : neededCount;
-            case B200:
-                return count_200 < neededCount ? count_200 : neededCount;
-            case B500:
-                return count_500 < neededCount ? count_500 : neededCount;
-            case B1000:
-                return count_1000 < neededCount ? count_1000 : neededCount;
-            case B2000:
-                return count_2000 < neededCount ? count_2000 : neededCount;
-            case B5000:
-                return count_5000 < neededCount ? count_5000 : neededCount;
-        }
-        return null;
-    }
-
 }
