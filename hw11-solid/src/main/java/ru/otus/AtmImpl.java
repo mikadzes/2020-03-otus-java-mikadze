@@ -1,17 +1,18 @@
 package ru.otus;
 
+import java.util.Comparator;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static ru.otus.Banknotes.B10;
-
 public class AtmImpl implements Atm {
 
-    private Map<Banknotes, Integer> state;
+    private TreeMap<Banknotes, Integer> state;
 
     public AtmImpl(Map<Banknotes, Integer> cash) {
-        this.state = cash;
+        state = new TreeMap<>();
+        state.putAll(cash);
     }
 
     public Integer getBalance() {
@@ -25,41 +26,47 @@ public class AtmImpl implements Atm {
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
-                        Integer::sum));
+                        Integer::sum,
+                        TreeMap::new));
     }
 
     public Map<Banknotes, Integer> cashWithdrawal(int amount) throws IllegalArgumentException, IllegalStateException {
         if (amount > getBalance()) {
             throw new IllegalStateException("В банкомате недостаточно средств");
         }
-        if (amount % B10.getValue() > 0) {
-            throw new IllegalArgumentException("Введите сумму кратную 10");
+        Banknotes smallestBanknote = getSmallestBanknote();
+        if (amount % smallestBanknote.getValue() > 0) {
+            throw new IllegalArgumentException("Введите сумму кратную " + smallestBanknote);
         }
-        final int[] v = new int[1];
-        v[0] = amount;
-        Map<Banknotes, Integer>
-                tray = state.entrySet().stream()
-                .sorted(Map.Entry.<Banknotes, Integer>comparingByKey())
-                .map(entry -> {
-                    int count = getBanknotesCount(v[0], entry);
-                    v[0] -= entry.getKey().getValue() * count;
-                    return Map.entry(entry.getKey(), count);
-                })
-                .filter(entry -> entry.getValue() != 0)
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue));
+
+        Map<Banknotes, Integer> tray = new TreeMap<>();
+        for (Map.Entry<Banknotes, Integer> entry : state.entrySet()) {
+            int count = getBanknotesCount(amount, entry);
+            amount -= entry.getKey().getValue() * count;
+            if (count > 0) {
+                tray.put(entry.getKey(), count);
+            }
+        }
 
         this.state = Stream.concat(state.entrySet().stream(), tray.entrySet().stream())
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
-                        (v1, v2) -> v1 - v2));
+                        (v1, v2) -> v1 - v2,
+                        TreeMap::new));
         return tray;
     }
 
     private int getBanknotesCount(int amount, Map.Entry<Banknotes, Integer> entry) {
         int neededCount = amount / entry.getKey().getValue();
         return entry.getValue() >= neededCount ? neededCount : entry.getValue();
+    }
+
+    private Banknotes getSmallestBanknote() {
+        return state.entrySet().stream()
+                .filter(entry -> entry.getValue() > 0)
+                .min(Comparator.comparingInt(o -> o.getKey().getValue()))
+                .get()
+                .getKey();
     }
 }
