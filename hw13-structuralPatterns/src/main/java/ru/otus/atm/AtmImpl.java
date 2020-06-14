@@ -1,167 +1,109 @@
 package ru.otus.atm;
 
-import lombok.Getter;
-import ru.otus.atm.snapshot.AtmSnapshot;
-import ru.otus.atm.snapshot.AtmSnapshotImpl;
-
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.Map;
-import java.util.Optional;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static ru.otus.atm.Banknotes.*;
-
-@Getter
 public class AtmImpl implements Atm {
 
-    private Integer count_10;
-    private Integer count_50;
-    private Integer count_100;
-    private Integer count_200;
-    private Integer count_500;
-    private Integer count_1000;
-    private Integer count_2000;
-    private Integer count_5000;
+    private TreeMap<Banknotes, Integer> state;
+    private Snapshot initialState;
 
-    private Map<Banknotes, Integer> tray = new HashMap<>();
-    private AtmSnapshot initialState;
-
-    public AtmImpl(AtmBuilder builder) {
-        count_10 = builder.getCount_10();
-        count_50 = builder.getCount_50();
-        count_100 = builder.getCount_100();
-        count_200 = builder.getCount_200();
-        count_500 = builder.getCount_500();
-        count_1000 = builder.getCount_1000();
-        count_2000 = builder.getCount_2000();
-        count_5000 = builder.getCount_5000();
-        saveSnapshot();
+    public AtmImpl(Map<Banknotes, Integer> cash) {
+        state = new TreeMap<>();
+        state.putAll(cash);
+        initialState = new Snapshot(this);
     }
 
-    public Integer getBalance() {
-        return B10.getValue() * count_10
-                + B50.getValue() * count_50
-                + B100.getValue() * count_100
-                + B200.getValue() * count_200
-                + B500.getValue() * count_500
-                + B1000.getValue() * count_1000
-                + B2000.getValue() * count_2000
-                + B5000.getValue() * count_5000;
+    @Override
+    public int getBalance() {
+        return state.entrySet().stream()
+                .mapToInt(entry -> entry.getKey().getValue() * entry.getValue())
+                .sum();
     }
 
+    @Override
+    public void restoreInitialState() {
+        state = new TreeMap<>();
+        state.putAll(initialState.state);
+    }
+
+    @Override
     public void cashReplenishment(Map<Banknotes, Integer> cash) {
-        count_10 += cash.getOrDefault(B10, 0);
-        count_50 += cash.getOrDefault(B50, 0);
-        count_100 += cash.getOrDefault(B100, 0);
-        count_200 += cash.getOrDefault(B200, 0);
-        count_500 += cash.getOrDefault(B500, 0);
-        count_1000 += cash.getOrDefault(B1000, 0);
-        count_2000 += cash.getOrDefault(B2000, 0);
-        count_5000 += cash.getOrDefault(B5000, 0);
+        this.state = Stream.concat(state.entrySet().stream(), cash.entrySet().stream())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        Integer::sum,
+                        TreeMap::new));
     }
 
-    public Map<Banknotes, Integer> cashWithdrawal(Integer amount) throws IllegalArgumentException, IllegalStateException {
+    @Override
+    public Map<Banknotes, Integer> cashWithdrawal(int amount) throws IllegalArgumentException, IllegalStateException {
         if (amount > getBalance()) {
             throw new IllegalStateException("В банкомате недостаточно средств");
         }
-        if (amount % B10.getValue() > 0) {
-            throw new IllegalArgumentException("Введите сумму кратную 10");
+        Banknotes smallestBanknote = getSmallestBanknote();
+        if (amount % smallestBanknote.getValue() > 0) {
+            throw new IllegalArgumentException("Введите сумму кратную " + smallestBanknote);
         }
-        tray.clear();
-        amount = addToTray(amount, B5000);
-        amount = addToTray(amount, B2000);
-        amount = addToTray(amount, B1000);
-        amount = addToTray(amount, B500);
-        amount = addToTray(amount, B200);
-        amount = addToTray(amount, B100);
-        amount = addToTray(amount, B50);
-        amount = addToTray(amount, B10);
-        if (amount != 0) {
-            throw new IllegalArgumentException("Внутренняя ошибка банкомата");
+
+        Map<Banknotes, Integer> tray = new TreeMap<>();
+        for (Map.Entry<Banknotes, Integer> entry : state.entrySet()) {
+            int count = getBanknotesCount(amount, entry);
+            amount -= entry.getKey().getValue() * count;
+            if (count > 0) {
+                tray.put(entry.getKey(), count);
+            }
         }
+
+        this.state = Stream.concat(state.entrySet().stream(), tray.entrySet().stream())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (v1, v2) -> v1 - v2,
+                        TreeMap::new));
         return tray;
     }
 
-    public void restoreInitialState() {
-        this.count_10 = initialState.getCount_10();
-        this.count_50 = initialState.getCount_50();
-        this.count_100 = initialState.getCount_100();
-        this.count_200 = initialState.getCount_200();
-        this.count_500 = initialState.getCount_500();
-        this.count_1000 = initialState.getCount_1000();
-        this.count_2000 = initialState.getCount_2000();
-        this.count_5000 = initialState.getCount_5000();
+    private int getBanknotesCount(int amount, Map.Entry<Banknotes, Integer> entry) {
+        int neededCount = amount / entry.getKey().getValue();
+        return entry.getValue() >= neededCount ? neededCount : entry.getValue();
     }
 
-    private void saveSnapshot() {
-        initialState = new AtmSnapshotImpl(this);
+    private Banknotes getSmallestBanknote() {
+        return state.entrySet().stream()
+                .filter(entry -> entry.getValue() > 0)
+                .min(Comparator.comparingInt(o -> o.getKey().getValue()))
+                .get()
+                .getKey();
     }
 
-    private Integer addToTray(Integer amount, Banknotes banknote) {
-        Integer count = calculateBanknoteCount(amount, banknote);
-        if (count != null && count != 0) {
-            tray.put(banknote, count);
-            setBanknoteCount(banknote, count);
-        }
-        return calculateAmount(amount, banknote, count);
+    public static Builder builder(){
+        return new Builder();
     }
 
-    private void setBanknoteCount(Banknotes banknote, Integer count) {
-        switch (banknote) {
-            case B10:
-                this.count_10 -= count;
-                break;
-            case B50:
-                this.count_50 -= count;
-                break;
-            case B100:
-                this.count_100 -= count;
-                break;
-            case B200:
-                this.count_200 -= count;
-                break;
-            case B500:
-                this.count_500 -= count;
-                break;
-            case B1000:
-                this.count_1000 -= count;
-                break;
-            case B2000:
-                this.count_2000 -= count;
-                break;
-            case B5000:
-                this.count_5000 -= count;
-                break;
+    private class Snapshot {
+        private final TreeMap<Banknotes, Integer> state;
+
+        private Snapshot(AtmImpl atm) {
+            this.state = atm.state;
         }
     }
 
-    private Integer calculateAmount(Integer amount, Banknotes banknote, Integer count) {
-        if (count != null) {
-            return amount - banknote.getValue() * count;
-        }
-        return amount;
-    }
+    public static class Builder {
 
-    private Integer calculateBanknoteCount(Integer amount, Banknotes banknote) {
-        int neededCount = amount / banknote.getValue();
-        switch (banknote) {
-            case B10:
-                return count_10 < neededCount ? count_10 : neededCount;
-            case B50:
-                return count_50 < neededCount ? count_50 : neededCount;
-            case B100:
-                return count_100 < neededCount ? count_100 : neededCount;
-            case B200:
-                return count_200 < neededCount ? count_200 : neededCount;
-            case B500:
-                return count_500 < neededCount ? count_500 : neededCount;
-            case B1000:
-                return count_1000 < neededCount ? count_1000 : neededCount;
-            case B2000:
-                return count_2000 < neededCount ? count_2000 : neededCount;
-            case B5000:
-                return count_5000 < neededCount ? count_5000 : neededCount;
-        }
-        return null;
-    }
+        private TreeMap<Banknotes, Integer> state = new TreeMap();
 
+        public Builder add(Banknotes banknote, int count) {
+            state.put(banknote, count);
+            return this;
+        }
+
+        public AtmImpl build() {
+            return new AtmImpl(state);
+        }
+    }
 }

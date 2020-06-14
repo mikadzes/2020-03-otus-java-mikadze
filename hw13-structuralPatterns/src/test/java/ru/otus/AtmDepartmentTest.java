@@ -2,10 +2,11 @@ package ru.otus;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.otus.atm.Atm;
-import ru.otus.atm.AtmBuilder;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static ru.otus.atm.Banknotes.*;
 
 class AtmDepartmentTest {
     AtmDepartment atmDepartment;
@@ -13,19 +14,9 @@ class AtmDepartmentTest {
     @BeforeEach
     void setUp() {
         atmDepartment = new AtmDepartment();
-        atmDepartment.addAtm(
-                new AtmBuilder()
-                        .setCount_5000(10)
-                        .build());
-        atmDepartment.addAtm(
-                new AtmBuilder()
-                        .setCount_2000(10)
-                        .build());
-        atmDepartment.addAtm(
-                new AtmBuilder()
-                        .setCount_1000(10)
-                        .build());
-
+        atmDepartment.addAtm(Map.of(B5000, 10));
+        atmDepartment.addAtm(Map.of(B2000, 10));
+        atmDepartment.addAtm(Map.of(B1000, 10));
     }
 
     @Test
@@ -39,6 +30,7 @@ class AtmDepartmentTest {
         atmDepartment.getAtm(1).cashWithdrawal(2000);
         atmDepartment.getAtm(2).cashWithdrawal(1000);
         assertEquals(72000, atmDepartment.getDepartmentBalance());
-
+        atmDepartment.restoreState();
+        assertEquals(80000, atmDepartment.getDepartmentBalance());
     }
 }

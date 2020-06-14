@@ -4,14 +4,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.otus.atm.Atm;
-import ru.otus.atm.AtmBuilder;
 import ru.otus.atm.AtmImpl;
 import ru.otus.atm.Banknotes;
 
 import java.util.Map;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static ru.otus.atm.Banknotes.*;
 
 class AtmTest {
@@ -31,15 +30,15 @@ class AtmTest {
                 B50, 10,
                 B10, 10
         );
-        atm = new AtmBuilder()
-                .setCount_10(10)
-                .setCount_50(10)
-                .setCount_100(10)
-                .setCount_200(10)
-                .setCount_500(10)
-                .setCount_1000(10)
-                .setCount_2000(10)
-                .setCount_5000(10)
+        atm = AtmImpl.builder()
+                .add(B5000, 10)
+                .add(B2000, 10)
+                .add(B1000, 10)
+                .add(B500, 10)
+                .add(B200, 10)
+                .add(B100, 10)
+                .add(B50, 10)
+                .add(B10, 10)
                 .build();
     }
 
@@ -68,8 +67,10 @@ class AtmTest {
     @Test
     void cashWithdrawal2() {
         assertEquals(Map.of(B5000, 1), atm.cashWithdrawal(5000));
+        assertEquals(83600, atm.getBalance());
         assertEquals(Map.of(B10, 1), atm.cashWithdrawal(10));
-        assertEquals(Map.of(B2000, 1, B1000, 1), atm.cashWithdrawal(3000));
+        assertEquals(83590, atm.getBalance());
         assertEquals(Map.of(B2000, 1, B1000, 1, B10, 2), atm.cashWithdrawal(3020));
+        assertEquals(80570, atm.getBalance());
     }
 }

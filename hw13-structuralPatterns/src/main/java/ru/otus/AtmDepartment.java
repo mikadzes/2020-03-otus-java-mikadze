@@ -1,16 +1,19 @@
 package ru.otus;
 
 import ru.otus.atm.Atm;
+import ru.otus.atm.AtmImpl;
+import ru.otus.atm.Banknotes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 
 public class AtmDepartment {
     private List<Atm> atms = new ArrayList<>();
 
-    public void addAtm(Atm atm) {
-        atms.add(atm);
+    public void addAtm(Map<Banknotes, Integer> cash) {
+        atms.add(new AtmImpl(cash));
     }
 
     public Integer getDepartmentBalance() {
@@ -23,9 +26,5 @@ public class AtmDepartment {
 
     public Atm getAtm(int i) {
         return atms.get(i);
-    }
-
-    public void setAtm(int i, Atm atm) {
-        atms.set(i, atm);
     }
 }
