@@ -11,10 +11,9 @@ public class MyClassImpl implements MyClassInterface {
         System.out.println("Method secureAccess with annotation and overloading");
     }
 
-    @Log
     @Override
     public void secureAccess(String param) {
-        System.out.println("Method secureAccess with annotation, param:" + param);
+        System.out.println("Method secureAccess without annotation, param:" + param);
     }
 
     @Log

@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class Ioc {
+    private static String REGEX_PATTERN = "^.*\\.(?=\\w+\\(.*\\)$)";
 
     private Ioc() {
     }
@@ -29,14 +30,15 @@ class Ioc {
             this.myClass = myClass;
             this.methods = Arrays.stream(myClass.getClass().getDeclaredMethods())
                     .filter((method) -> method.isAnnotationPresent(Log.class))
-                    .map(Method::getName)
+                    .map(Method::toGenericString)
+                    .map(s -> s.replaceFirst(REGEX_PATTERN, ""))
                     .collect(Collectors.toSet());
         }
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             System.out.println();
-            if (methods.contains(method.getName())) {
+            if (methods.contains(method.toGenericString().replaceFirst(REGEX_PATTERN, ""))) {
                 System.out.println("executed method: " + method.getName() + ", param: ");
                 Stream.of(args != null ? args : new Object[0]).forEach(System.out::println);
             }
