@@ -1,5 +1,7 @@
 package ru.otus.atm;
 
+import lombok.Getter;
+
 import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -7,14 +9,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class AtmImpl implements Atm {
-
-    private TreeMap<Banknotes, Integer> state;
-    private Snapshot initialState;
+    @Getter
+    private TreeMap<Banknotes, Integer> state = new TreeMap<>();
+    private Originator originator = new Originator();
 
     public AtmImpl(Map<Banknotes, Integer> cash) {
-        state = new TreeMap<>();
         state.putAll(cash);
-        initialState = new Snapshot(this);
+    }
+
+    public AtmImpl(AtmImpl atm) {
+        this.state.putAll(atm.getState());
     }
 
     @Override
@@ -22,12 +26,6 @@ public class AtmImpl implements Atm {
         return state.entrySet().stream()
                 .mapToInt(entry -> entry.getKey().getValue() * entry.getValue())
                 .sum();
-    }
-
-    @Override
-    public void restoreInitialState() {
-        state = new TreeMap<>();
-        state.putAll(initialState.state);
     }
 
     @Override
@@ -68,6 +66,16 @@ public class AtmImpl implements Atm {
         return tray;
     }
 
+    @Override
+    public void restoreState() {
+        this.state = originator.restoreState().getState();
+    }
+
+    @Override
+    public void saveState() {
+        originator.saveState(this);
+    }
+
     private int getBanknotesCount(int amount, Map.Entry<Banknotes, Integer> entry) {
         int neededCount = amount / entry.getKey().getValue();
         return entry.getValue() >= neededCount ? neededCount : entry.getValue();
@@ -81,16 +89,8 @@ public class AtmImpl implements Atm {
                 .getKey();
     }
 
-    public static Builder builder(){
+    public static Builder builder() {
         return new Builder();
-    }
-
-    private class Snapshot {
-        private final TreeMap<Banknotes, Integer> state;
-
-        private Snapshot(AtmImpl atm) {
-            this.state = atm.state;
-        }
     }
 
     public static class Builder {

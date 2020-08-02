@@ -21,7 +21,7 @@ public class AtmDepartment {
     }
 
     public void restoreState() {
-        atms.forEach(Atm::restoreInitialState);
+        atms.forEach(Atm::restoreState);
     }
 
     public Atm getAtm(int i) {

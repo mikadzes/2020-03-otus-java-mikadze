@@ -15,8 +15,11 @@ class AtmDepartmentTest {
     void setUp() {
         atmDepartment = new AtmDepartment();
         atmDepartment.addAtm(Map.of(B5000, 10));
+        atmDepartment.getAtm(0).saveState();
         atmDepartment.addAtm(Map.of(B2000, 10));
+        atmDepartment.getAtm(1).saveState();
         atmDepartment.addAtm(Map.of(B1000, 10));
+        atmDepartment.getAtm(2).saveState();
     }
 
     @Test
