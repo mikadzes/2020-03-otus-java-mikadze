@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+    id 'idea'
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+dependencies {
+    // This dependency is used by the application.
+    testImplementation('org.junit.jupiter:junit-jupiter')
+    implementation 'org.projectlombok:lombok:1.18.12'
+    annotationProcessor 'org.projectlombok:lombok:1.18.12'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
