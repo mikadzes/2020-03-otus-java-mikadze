@@ -10,8 +10,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static ru.otus.Methods.concatNameWithParameters;
+
 class Ioc {
-    private static String REGEX_PATTERN = "^.*\\.(?=\\w+\\(.*\\)$)";
 
     private Ioc() {
     }
@@ -30,15 +31,14 @@ class Ioc {
             this.myClass = myClass;
             this.methods = Arrays.stream(myClass.getClass().getDeclaredMethods())
                     .filter((method) -> method.isAnnotationPresent(Log.class))
-                    .map(Method::toGenericString)
-                    .map(s -> s.replaceFirst(REGEX_PATTERN, ""))
+                    .map(Methods::concatNameWithParameters)
                     .collect(Collectors.toSet());
         }
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             System.out.println();
-            if (methods.contains(method.toGenericString().replaceFirst(REGEX_PATTERN, ""))) {
+            if (methods.contains(concatNameWithParameters(method))) {
                 System.out.println("executed method: " + method.getName() + ", param: ");
                 Stream.of(args != null ? args : new Object[0]).forEach(System.out::println);
             }
