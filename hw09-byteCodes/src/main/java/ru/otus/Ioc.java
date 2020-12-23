@@ -10,8 +10,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static ru.otus.Methods.concatNameWithParameters;
-
 class Ioc {
 
     private Ioc() {
@@ -31,7 +29,7 @@ class Ioc {
             this.myClass = myClass;
             this.methods = Arrays.stream(myClass.getClass().getDeclaredMethods())
                     .filter((method) -> method.isAnnotationPresent(Log.class))
-                    .map(Methods::concatNameWithParameters)
+                    .map(Ioc::concatNameWithParameters)
                     .collect(Collectors.toSet());
         }
 
@@ -51,5 +49,11 @@ class Ioc {
                     "myClass=" + myClass +
                     '}';
         }
+    }
+
+    public static String concatNameWithParameters(Method method) {
+        return method.getName() + Arrays.stream(method.getParameterTypes())
+                .map(Class::getSimpleName)
+                .reduce("", String::concat);
     }
 }
