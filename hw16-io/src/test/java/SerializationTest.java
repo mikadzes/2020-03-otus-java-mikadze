@@ -3,25 +3,32 @@ import org.junit.jupiter.api.Test;
 import ru.otus.mygson.MyGson;
 import ru.otus.mygson.TestObject;
 
-import java.util.Collections;
+import java.util.Arrays;
 
 public class SerializationTest {
 
     @Test
     public void MyGsonTest() {
-        TestObject testObject = TestObject.builder()
+        TestObject testObject1 = TestObject.builder()
                 .aBoolean(true)
                 .aFloat(123.45f)
                 .anInt(987)
                 .ints(new int[]{1, 2, 3, 4, 5})
                 .string("Any string")
-                .collection(Collections.singleton("a"))
+                .aChar('f')
+                .strings(new String[]{"a", "b", "c"})
+                .collection(Arrays.asList("one", "two", "three"))
                 .build();
-        System.out.println(testObject.toString());
-        System.out.println(new Gson().toJson(testObject));
+        Gson gson = new Gson();
+        System.out.println("Gson: " + gson.toJson(testObject1));
+        System.out.println("Gson null: " + gson.toJson(null));
         MyGson myGson = new MyGson();
-        String myJson = myGson.toJson(testObject);
-        System.out.println(myJson);
+        String myJsonString = myGson.toJson(testObject1);
+        System.out.println("myGson: " + myJsonString);
+        System.out.println("myGson null: " + myGson.toJson(null));
+        TestObject testObject2 = gson.fromJson(myJsonString, TestObject.class);
+        assert (testObject1.equals(testObject2));
+        System.out.println(testObject1.equals(testObject2));
     }
 
 

@@ -2,51 +2,71 @@ package ru.otus.mygson;
 
 import lombok.SneakyThrows;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.Collection;
 
 import static java.lang.String.format;
 
 public class MyGson {
-    private final String NUM_PATTERN = "\"%s\":%s";
-    private final String STR_PATTERN = "\"%s\":\"%s\"";
-
+    private final String FIELD_PATTERN = "\"%s\":%s,";
+    private final String QUOTED_PATTERN = "\"%s\"";
+    private final String SQUARE_BRACKETS_PATTERN = "[%s]";
+    private final String BRACES_PATTERN = "{%s}";
+    private final String UNQUOTED_PATTERN = "%s";
 
     @SneakyThrows
     public String toJson(Object testObject) {
-        if (testObject != null) {
-
+        StringBuilder sb = new StringBuilder();
+        if (testObject == null) {
+            return null;
+        } else {
             Field[] fields = testObject.getClass().getDeclaredFields();
             for (Field field : fields) {
+                String fieldName = field.getName();
+                String fieldValue;
                 field.setAccessible(true);
-                System.out.println(field.getName());
                 if (field.canAccess(testObject)) {
-                    if (field.getType().isAssignableFrom(String.class)) {
-                        System.out.println(format(STR_PATTERN, field.getName(), field.get(testObject)));
-                    } else if (field.getType().isAssignableFrom(Collection.class)) {
-                        System.out.println("зыс из коллекшн");
-                    } else if (field.getType().isArray()) {
-                        unpackArray(field.getType());
-                        if (field.getType().getComponentType().isAssignableFrom(int.class)) {
-                            int[] array = (int[]) field.get(testObject);
-                            System.out.println(Arrays.toString(array));
-                            System.out.println("зыс из аррэй");
-                        }
-
+                    final Class<?> clazz = field.getType();
+                    if (clazz.isAssignableFrom(Collection.class)) {
+                        Collection<?> collection = (Collection<?>) field.get(testObject);
+                        fieldValue = getJsonValueFromArray(collection.toArray());
+                    } else if (clazz.isArray()) {
+                        Object array = field.get(testObject);
+                        fieldValue = getJsonValueFromArray(array);
                     } else {
-                        System.out.println(format(NUM_PATTERN, field.getName(), field.get(testObject)));
+                        fieldValue = wrapInQuotes(field.get(testObject));
                     }
-
-
+                    sb.append(format(FIELD_PATTERN, fieldName, fieldValue));
                 }
-
             }
         }
-        return null;
+        sb.deleteCharAt(sb.length() - 1);
+        return format(BRACES_PATTERN, sb.toString());
     }
 
-    private <T> T[] unpackArray(Class<?> obj) {
-        return (T[]) new Object[]{obj};
+    private String getJsonValueFromArray(Object array) {
+        final StringBuilder sb = new StringBuilder();
+        int length = Array.getLength(array);
+        for (int i = 0; i < length; i++) {
+            final Object obj = Array.get(array, i);
+            sb.append(wrapInQuotes(obj));
+            sb.append(",");
+        }
+        sb.deleteCharAt(sb.length() - 1);
+        return wrapInSquareBrackets(sb.toString());
     }
+
+    private String wrapInQuotes(Object object) {
+        final Class<?> clazz = object.getClass();
+        if (clazz.isAssignableFrom(Character.class) || clazz.isAssignableFrom(String.class)) {
+            return format(QUOTED_PATTERN, object);
+        }
+        return format(UNQUOTED_PATTERN, object);
+    }
+
+    private String wrapInSquareBrackets(String string) {
+        return format(SQUARE_BRACKETS_PATTERN, string);
+    }
+
 }
